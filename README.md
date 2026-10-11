@@ -29,8 +29,17 @@ Los datos se guardan en `data/sii_hub.sqlite3` (configurable con `SII_DB_PATH`).
 ## Pruebas
 
 ```bash
+pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
 ```
+
+## Docker (solo local)
+
+```bash
+docker compose up --build
+```
+
+Abre http://127.0.0.1:8000. El volumen Docker conserva la base de datos entre reinicios. La configuración publicada enlaza el puerto únicamente a localhost y **no incluye HTTPS**.
 
 ## Límites del MVP
 
