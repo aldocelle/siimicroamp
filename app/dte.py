@@ -1,6 +1,8 @@
 """Lectura segura y validación local de DTE chilenos. No consulta el SII."""
 import re
 from defusedxml import ElementTree as ET
+from defusedxml.common import DTDForbidden, EntitiesForbidden, ExternalReferenceForbidden
+from xml.etree.ElementTree import ParseError
 
 
 def local_name(tag):
@@ -36,8 +38,8 @@ def valid_rut(value):
     if int(body) == 0:
         return False
     total = sum(int(digit) * (2 + i % 6) for i, digit in enumerate(reversed(body)))
-    expected = "0123456789K"[11 - (total % 11)] if (11 - total % 11) < 11 else "0"
-    # Resto 0 => DV 0; resto 1 => DV K.
+    result = 11 - (total % 11)
+    expected = "0" if result == 11 else "K" if result == 10 else str(result)
     return expected == dv
 
 
@@ -92,9 +94,9 @@ def parse_dte_xml(content: bytes):
         raise ValueError("El XML está vacío o supera el límite de 10 MB.")
     try:
         root = ET.fromstring(content)
-    except ET.ParseError as exc:
+    except ParseError as exc:
         raise ValueError("El archivo no es XML válido.") from exc
-    except (ET.EntitiesForbidden, ET.DTDForbidden, ET.ExternalReferenceForbidden) as exc:
+    except (EntitiesForbidden, DTDForbidden, ExternalReferenceForbidden) as exc:
         raise ValueError("XML rechazado: entidades o DTD no permitidas.") from exc
 
     documents = []
