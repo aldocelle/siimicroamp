@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101318">
+  <meta name="description" content="SII Hub: organiza, revisa y exporta documentos tributarios chilenos.">
+  <title>SII Hub | Microverse</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <section id="auth" class="auth-shell" hidden>
+    <div class="auth-intro">
+      <div class="brand"><span class="brand-mark">S</span><span>SII HUB <small> / MICROVERSE</small></span></div>
+      <div class="auth-copy">
+        <p class="eyebrow"><span class="pulse"></span> CONTROL DOCUMENTAL TRIBUTARIO</p>
+        <h1>Del documento<br>al dato. <em>Sin perder<br>el control.</em></h1>
+        <p>Importa XML DTE, revisa información, detecta duplicados y construye tu registro interno. Sin promesas de integración imaginaria.</p>
+      </div>
+      <p class="auth-foot">MVP independiente · Chile · Procesamiento local · Sin conexión SII</p>
+    </div>
+    <div class="auth-panel">
+      <div class="auth-card">
+        <p class="eyebrow">BIENVENIDO A SII HUB</p>
+        <h2 id="auth-title">Ingresa a tu espacio</h2>
+        <p class="muted" id="auth-description">Tus documentos, organizados en un solo lugar.</p>
+        <form id="auth-form">
+          <div id="register-fields" hidden>
+            <label for="org">Nombre de tu organización</label>
+            <input id="org" name="organization" placeholder="Ej. Mi Empresa SpA" maxlength="120" autocomplete="organization">
+            <label for="org-rut">RUT de la organización <span class="muted">(opcional)</span></label>
+            <input id="org-rut" name="rut" placeholder="12.345.678-5" maxlength="24">
+          </div>
+          <label for="email">Correo electrónico</label>
+          <input id="email" name="email" type="email" autocomplete="email" required placeholder="tu@empresa.cl">
+          <label for="password">Contraseña</label>
+          <input id="password" name="password" type="password" minlength="10" required autocomplete="current-password" placeholder="Mínimo 10 caracteres">
+          <button class="btn btn-primary wide" id="auth-submit" type="submit">Ingresar <span>↗</span></button>
+        </form>
+        <button id="auth-toggle" class="text-button" type="button">¿No tienes cuenta? Crea una</button>
+        <div class="auth-notice">Tus archivos se almacenan en esta instalación. No se envían al SII.</div>
+      </div>
+    </div>
+  </section>
+
+  <div id="shell" class="shell" hidden>
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">S</span><span>SII HUB <small>/ MICROVERSE</small></span></div>
+      <div class="workspace-label">ESPACIO DE TRABAJO</div>
+      <div class="workspace"><span class="workspace-avatar">◈</span><span id="org-name">Mi organización</span></div>
+      <div class="nav-label">OPERACIONES</div>
+      <nav aria-label="Navegación principal">
+        <button class="nav-item active" type="button" data-view="documents"><span>▦</span> Documentos <span class="nav-arrow">↗</span></button>
+        <button class="nav-item" type="button" data-view="connections"><span>⇄</span> Conexiones SII <span class="soon">PRÓX.</span></button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="local-badge"><span class="pulse"></span> MODO LOCAL <span class="muted">v0.1</span></div>
+        <p>Datos extraídos ≠ verificados por SII.</p>
+        <div class="user-row"><span class="user-avatar">●</span><span id="user-email" class="user-email"></span></div>
+        <button id="logout" class="logout" type="button">Cerrar sesión ↗</button>
+      </div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div><span class="breadcrumb">MICROVERSE</span><span class="slash">/</span><span id="breadcrumb-current">DOCUMENTOS</span></div><div class="top-status"><span class="status-dot"></span> SERVICIOS LOCALES ACTIVOS</div></header>
+      <div class="content">
+        <section id="documents-view">
+          <div class="page-head">
+            <div><p class="eyebrow">TU CENTRO DOCUMENTAL</p><h1>Documentos<span class="accent">.</span></h1><p class="muted">Una vista clara de tu información tributaria, sin ruido.</p></div>
+            <label class="btn btn-primary upload-button">+ Importar XML<input id="xml-file" type="file" accept=".xml,text/xml,application/xml" hidden></label>
+          </div>
+          <div class="notice"><span>ⓘ</span><div><strong>Extracción local, no verificación SII.</strong> Los estados indican revisión interna. La integración oficial requiere certificado y autorización.</div></div>
+          <div class="metrics">
+            <div class="metric"><span class="metric-label">DOCUMENTOS</span><strong id="metric-count">0</strong><span class="metric-foot">Registrados en tu espacio</span></div>
+            <div class="metric"><span class="metric-label">TOTAL COMPRAS</span><strong id="metric-purchases">$0</strong><span class="metric-foot">Según documentos importados</span></div>
+            <div class="metric"><span class="metric-label">TOTAL VENTAS</span><strong id="metric-sales">$0</strong><span class="metric-foot">Según documentos importados</span></div>
+            <div class="metric"><span class="metric-label">POR REVISAR</span><strong id="metric-pending">0</strong><span class="metric-foot">Extracción sin confirmar</span></div>
+          </div>
+          <div class="table-card">
+            <div class="table-head"><div><h2>Registro de documentos</h2><p class="muted">Hasta 300 resultados recientes · datos propios</p></div><a class="btn btn-outline" href="/api/export.csv" id="export-link">↓ Exportar CSV</a></div>
+            <div class="filters"><label class="search-box"><span>⌕</span><input id="search" type="search" placeholder="Buscar por folio, RUT o emisor" aria-label="Buscar documentos"></label><select id="direction" aria-label="Filtrar dirección"><option value="">Todas las categorías</option><option value="compra">Compras</option><option value="venta">Ventas</option><option value="sin_clasificar">Sin clasificar</option></select></div>
+            <div class="table-scroll"><table><thead><tr><th>DOCUMENTO</th><th>EMISOR</th><th>FECHA</th><th>DIRECCIÓN</th><th>TOTAL</th><th>ESTADO</th><th></th></tr></thead><tbody id="documents-body"></tbody></table></div>
+            <div id="empty" class="empty" hidden><div class="empty-icon">⇧</div><h3>Tu bandeja está lista.</h3><p>Importa tu primer XML DTE para comenzar. Puedes cargar un archivo con varios documentos.</p><label class="btn btn-primary">+ Importar XML<input id="xml-file-empty" type="file" accept=".xml,text/xml,application/xml" hidden></label></div>
+            <div class="table-footer">Los datos provienen de archivos importados por tu organización.</div>
+          </div>
+        </section>
+        <section id="connections-view" hidden>
+          <div class="page-head"><div><p class="eyebrow">INTEGRACIONES TRIBUTARIAS</p><h1>Conexiones SII<span class="accent">.</span></h1><p class="muted">Transparencia sobre lo disponible y lo que aún requiere desarrollo.</p></div></div>
+          <div class="notice"><span>ⓘ</span><div>Actualmente no existe una conexión activa al SII. No ingreses certificados, claves tributarias ni tokens aquí.</div></div>
+          <div class="connections-grid">
+            <article class="connection-card"><div class="connection-symbol">⌁</div><span class="tag pending">PENDIENTE</span><h2>Autenticación oficial</h2><p>Semilla, firma con certificado digital y token de sesión. Requiere custodia segura de credenciales.</p></article>
+            <article class="connection-card"><div class="connection-symbol">◉</div><span class="tag pending">PENDIENTE</span><h2>Consulta de estado DTE</h2><p>Conector SOAP QueryEstDte para ambientes de certificación y producción autorizados.</p></article>
+            <article class="connection-card"><div class="connection-symbol">⇥</div><span class="tag pending">PENDIENTE</span><h2>Estado de envío</h2><p>Seguimiento oficial de envíos DTE con identificador de recepción.</p></article>
+            <article class="connection-card"><div class="connection-symbol">✓</div><span class="tag pending">PENDIENTE</span><h2>Aceptación y reclamo</h2><p>Servicio oficial sujeto a autenticación y confirmación expresa de cada acción.</p></article>
+          </div>
+          <p class="reference">Referencia: <a href="https://www.sii.cl/factura_electronica/doc_emp_aut.htm" target="_blank" rel="noopener noreferrer">documentación oficial de servicios web DTE del SII ↗</a></p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="overlay" class="overlay" hidden>
+    <div class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <div class="drawer-head"><div><p class="eyebrow">REVISIÓN HUMANA</p><h2 id="drawer-title">Revisar documento</h2></div><button id="drawer-close" class="icon-button" aria-label="Cerrar" type="button">✕</button></div>
+      <div class="drawer-body">
+        <p class="muted">Confirma o corrige los datos extraídos del XML. Esto no verifica el documento en el SII.</p>
+        <div id="warnings" class="warning-list" hidden></div>
+        <form id="review-form">
+          <div class="form-grid">
+            <div><label for="field-tipo_dte">Tipo DTE</label><input id="field-tipo_dte" name="tipo_dte" required maxlength="5"></div>
+            <div><label for="field-folio">Folio</label><input id="field-folio" name="folio" required maxlength="30"></div>
+            <div class="full"><label for="field-fecha_emision">Fecha emisión</label><input id="field-fecha_emision" name="fecha_emision" placeholder="AAAA-MM-DD"></div>
+            <div><label for="field-rut_emisor">RUT emisor</label><input id="field-rut_emisor" name="rut_emisor"></div>
+            <div><label for="field-rut_receptor">RUT receptor</label><input id="field-rut_receptor" name="rut_receptor"></div>
+            <div class="full"><label for="field-razon_emisor">Razón social emisor</label><input id="field-razon_emisor" name="razon_emisor"></div>
+            <div class="full"><label for="field-razon_receptor">Razón social receptor</label><input id="field-razon_receptor" name="razon_receptor"></div>
+            <div><label for="field-monto_neto">Neto</label><input id="field-monto_neto" name="monto_neto" type="number" step="1"></div>
+            <div><label for="field-monto_exento">Exento</label><input id="field-monto_exento" name="monto_exento" type="number" step="1"></div>
+            <div><label for="field-iva">IVA</label><input id="field-iva" name="iva" type="number" step="1"></div>
+            <div><label for="field-monto_total">Total</label><input id="field-monto_total" name="monto_total" type="number" step="1"></div>
+            <div class="full"><label for="field-direccion">Clasificación</label><select id="field-direccion" name="direccion"><option value="sin_clasificar">Sin clasificar</option><option value="compra">Compra</option><option value="venta">Venta</option></select></div>
+          </div>
+        </form>
+      </div>
+      <div class="drawer-actions"><a id="download-original" class="btn btn-outline" href="#">↓ XML original</a><button id="save-review" type="button" class="btn btn-primary">Guardar revisión ↗</button></div>
+    </div>
+  </div>
+</body>
+</html>
