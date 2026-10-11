@@ -1,0 +1,13 @@
+services:
+  sii-hub:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      SII_DB_PATH: /srv/data/sii_hub.sqlite3
+      SII_COOKIE_SECURE: "0" # Solo localhost; producción: HTTPS y valor 1
+    volumes:
+      - sii_data:/srv/data
+    restart: unless-stopped
+volumes:
+  sii_data:
